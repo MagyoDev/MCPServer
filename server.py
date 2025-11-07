@@ -1,5 +1,7 @@
 # server.py
 from mcp.server.fastmcp import FastMCP
+from fastapi import FastAPI
+
 mcp = FastMCP("demo-wxo-mcp")
 
 @mcp.tool()
@@ -7,10 +9,9 @@ def soma(a: int, b: int) -> int:
     """Soma dois números"""
     return a + b
 
-@mcp.tool()
-def saudacao(nome: str) -> str:
-    """Saúda um usuário pelo nome"""
-    return f"Olá, {nome}!"
+# 1) Gere a app ASGI do MCP (endpoint /mcp)
+mcp_app = mcp.http_app(path="/mcp")
 
-if __name__ == "__main__":
-    mcp.run()
+# 2) Envolva com FastAPI repassando o lifespan do MCP
+app = FastAPI(lifespan=mcp_app.lifespan)
+app.mount("/", mcp_app)
